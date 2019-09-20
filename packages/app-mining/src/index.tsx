@@ -1,4 +1,4 @@
-// Copyright 2017-2019 @polkadot/app-123code authors & contributors
+// Copyright 2017-2019 @polkadot/app-mining authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
@@ -13,9 +13,7 @@ import { AppProps, I18nProps } from '@polkadot/react-components/types';
 import React, { useState } from 'react';
 
 // local imports and components
-import AccountSelector from './AccountSelector';
-import SummaryBar from './SummaryBar';
-import Transfer from './Transfer';
+import Exchange from './Exchange';
 import translate from './translate';
 
 // define our internal types
@@ -28,9 +26,7 @@ function App ({ className }: Props): React.ReactElement<Props> {
     // in all apps, the main wrapper is setup to allow the padding
     // and margins inside the application. (Just from a consistent pov)
     <main className={className}>
-      <SummaryBar />
-      <AccountSelector onChange={setAccountId} />
-      <Transfer accountId={accountId} />
+      <Exchange />
     </main>
   );
 }

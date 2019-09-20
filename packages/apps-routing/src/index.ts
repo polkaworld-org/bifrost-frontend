@@ -19,10 +19,10 @@ import explorer from './explorer';
 import extrinsics from './extrinsics';
 // import genericAsset from './generic-asset';
 import js from './js';
-// import parachains from './parachains';
+import parachains from './parachains';
 import settings from './settings';
 import staking from './staking';
-// import storage from './storage';
+import storage from './storage';
 import sudo from './sudo';
 import toolbox from './toolbox';
 import transfer from './transfer';
@@ -37,11 +37,13 @@ const routes: Routes = appSettings.uiMode === 'light'
     // addressbook,
     // claims,
     transfer,
+    storage,
     // genericAsset,
     null,
     staking,
     // democracy,
     // council,
+        parachains,
     // TODO Not sure about the inclusion of treasury & parachains here
     null,
     settings,
@@ -60,10 +62,10 @@ const routes: Routes = appSettings.uiMode === 'light'
     // democracy,
     // council,
     // treasury,
-    // parachains,
+    parachains,
     null,
     contracts,
-    // storage,
+    storage,
     extrinsics,
     sudo,
     null,

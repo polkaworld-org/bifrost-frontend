@@ -18,6 +18,6 @@ export default ([
       defaultValue: 'Mining'
     },
     icon: 'bath',
-    name: 'Mining'
+    name: 'mining'
   }
 ] as Routes);

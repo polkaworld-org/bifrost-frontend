@@ -31,34 +31,51 @@ const eosApi = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(),
 import { ApiPromise, WsProvider } from '@polkadot/api';
 const aliceBifrost = 'JEaJtPxm3BH8X1ZNc64DiUWPJBuT4vMC9Qrds8Q877CRRa1';
 const bobBifrost = 'JHKD9g23RWkq9MHtLMUXndXL8RrLxt5pNHWUvpPrgixAwuj';
-const provider = new WsProvider('wss://kusama-rpc.polkadot.io');
+const customProvider = new WsProvider('ws://127.0.0.1:9944');
 
 function Exchange (): React.ReactElement<Props> {
     const [eosAccount, setEosAccount] = useState(aliceEos);
     const [eosBalance, setEosBalance] = useState(0);
+    const [bifrostAccount, setBifrostAccount] = useState(aliceBifrost);
+    const [bifrostBalance, setBifrostBalance] = useState(0);
+    const [bifrostApi, setBifrostApi] = useState(false);
     const [isExchange, setIsExchange] = useState(true);
     const [exchangeEos, setExchangeEos] = useState(0);
     const [exchangevEos, setExchangevEos] = useState(0);
 
     useEffect((): void => {
         getEosBalance(eosAccount);
-        getBifrostBalance('aaa');
+        getBifrostBalance(bifrostAccount);
     });
 
-    function getBifrostBalance(account)
+    function initApi()
     {
         (async () => {
-            const bifrostApi = await ApiPromise.create({ provider });
-            const balance = await bifrostApi.query.balances.freeBalance(aliceBifrost)
+            const api = await ApiPromise.create({
+                provider: customProvider,
+                types: {
+                    Token: {
+                        "symbol": "Vec<u8>",
+                        "precision": "u16",
+                        "totalSupply": "u128"
+                    },
+                    SettlementId: "u64"
+                }
+            });
 
-            console.log('Bifrost Account', balance);
+            return api
         })();
     }
 
-    function getRatio()
-    {
+    // function getRatio()
+    // {
+    //     (async () => {
+    //         const bifrostApi = await ApiPromise.create({ provider });
+    //         const balance = await bifrostApi.query.balances.freeBalance(account)
 
-    }
+    //         console.log('Bifrost Account', balance);
+    //     })();
+    // }
 
     function issueAsset()
     {
@@ -70,7 +87,7 @@ function Exchange (): React.ReactElement<Props> {
 
     }
 
-    function getEosBalance (account)
+    function getEosBalance(account)
     {
         (async () => {
             const balance = await eosApi.rpc.get_currency_balance('eosio.token', account, 'EOS');
@@ -80,12 +97,33 @@ function Exchange (): React.ReactElement<Props> {
         })();
     }
 
+    function getBifrostBalance(account)
+    {
+        initApi();
+        console.log('api', bifrostApi)
+        if(bifrostApi) {
+            (async () => {
+                const balance = await bifrostApi.query.assets.balances([0, '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty']);
+
+                console.log('Bifrost Account', sss);
+            })();
+        }
+    }
+
     function changeEosAccount(select)
     {
         let account = select.value;
 
         setEosAccount(account);
         getEosBalance(account);
+    }
+
+    function changeBifrostAccount(select)
+    {
+        let account = select.value;
+
+        setBifrostAccount(account);
+        getBifrostBalance(account);
     }
 
     function changeSwitch(switchStatus)
@@ -126,9 +164,14 @@ function Exchange (): React.ReactElement<Props> {
         })();
     }
 
-    const options = [
+    const eosOptions = [
         { value: aliceEos, label: aliceEos },
         { value: bobEos, label: bobEos }
+    ];
+
+    const bifrostOptions = [
+        { value: aliceBifrost, label: aliceBifrost },
+        { value: bobBifrost, label: bobBifrost }
     ];
 
     const sectionStyle = {
@@ -162,17 +205,17 @@ function Exchange (): React.ReactElement<Props> {
         <section style={sectionStyle}>
             <div style={{ display: 'flex' }}>
                 <div style={selectStyle}>
-                    <Select options={options} defaultValue={{ value: aliceEos, label: aliceEos }} onChange={changeEosAccount} />
+                    <Select options={eosOptions} defaultValue={{ value: aliceEos, label: aliceEos }} onChange={changeEosAccount} />
                     <div style={{ display: 'inline-grid' }}>
                         <span>EOS 账号：{eosAccount}</span>
                         <span>余额：{eosBalance} EOS</span>
                     </div>
                 </div>
                 <div style={selectStyle}>
-                    <Select options={options} defaultValue={{ value: aliceEos, label: aliceEos }} onChange={changeEosAccount} />
+                    <Select options={bifrostOptions} defaultValue={{ value: aliceBifrost, label: aliceBifrost }} onChange={changeBifrostAccount} />
                     <div>
-                        <span>当前 Bifrost 账号：{eosAccount}</span>
-                        <span>余额：{eosBalance}</span>
+                        <span>Bifrost 账号：{bifrostAccount}</span>
+                        <span>余额：{bifrostBalance}</span>
                     </div>
                 </div>
             </div>

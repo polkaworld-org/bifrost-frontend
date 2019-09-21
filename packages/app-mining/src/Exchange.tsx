@@ -42,9 +42,9 @@ function Exchange (): React.ReactElement<Props> {
     const [isExchange, setIsExchange] = useState(true);
     const [exchangeEos, setExchangeEos] = useState(0);
     const [exchangevEos, setExchangevEos] = useState(0);
-    const [ratio, setRatio] = useState('0.2');
-    const [timerEosBalance, setTimerEosBalance] = useState('50');
-    const [perBlockRatio, setPerBlockRatio] = useState('0.00001');
+    const [ratio, setRatio] = useState(0);
+    const [timerEosBalance, setTimerEosBalance] = useState(0);
+    const [perBlockRatio, setPerBlockRatio] = useState(0);
     const [timer, setTimer] = useState(false);
 
 
@@ -67,16 +67,6 @@ function Exchange (): React.ReactElement<Props> {
 
     function startTimer()
     {
-
-            // if(!ratio) {
-            //     setRatio('0.2')
-            //     setPerBlockRatio('0.0001')
-
-            //     let veos = 50;
-
-            //     setTimerEosBalance(veos/0.2);
-            // }
-
         if(!timer) {
             const t = setInterval(() => {
                 console.log('per', (perBlockRatio / 3))
@@ -154,6 +144,7 @@ function Exchange (): React.ReactElement<Props> {
         ]);
 
         setvEosBalance(formatBifrostAmount(balance))
+        setTimerEosBalance(formatBifrostAmount(balance));
 
         console.log('Bifrost Account', formatBifrostAmount(balance))
     }

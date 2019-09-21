@@ -9,6 +9,7 @@ function FlipRatio ({ currentBalance }: Props): React.ReactElement<Props> {
       play
       height={40}
       width={24}
+      nonNumberStyle={{ fontSize: '40px' }}
       color="#4e4e4e"
       background="#ffffff"
       durationSeconds={0.8}

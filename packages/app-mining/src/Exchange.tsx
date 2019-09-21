@@ -5,6 +5,7 @@
 
 import { AccountId, RuntimeVersion } from '@polkadot/types/interfaces';
 import { BareProps, I18nProps } from '@polkadot/react-components/types';
+import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp';
 
 import BN from 'bn.js';
 import React, { useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ import { Bubble, IdentityIcon, InputBalance, TxButton, Dropdown, Input, Toggle, 
 import { formatBalance, formatNumber } from '@polkadot/util';
 import { Api, JsonRpc, RpcError } from 'eosjs';
 import { JsSignatureProvider } from 'eosjs/dist/eosjs-jssig';
+import { Keyring } from '@polkadot/keyring';
 import FlipRatio from './FlipRatio';
 import Select from 'react-select';
 import styled from "styled-components";
@@ -29,8 +31,8 @@ const eosApi = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(),
 
 // Bifrost Config
 import { ApiPromise, WsProvider } from '@polkadot/api';
-const aliceBifrost = 'JEaJtPxm3BH8X1ZNc64DiUWPJBuT4vMC9Qrds8Q877CRRa1';
-const bobBifrost = 'JHKD9g23RWkq9MHtLMUXndXL8RrLxt5pNHWUvpPrgixAwuj';
+const aliceBifrost = '5FeSdQVmSJXcFzabGNPjnbDsGGMBfzGeA1DCiFSMnKBrQfEk';
+const bobBifrost = '5Dygkp5erTDsAWganSo5zZxiypT8SLTgdsBbWWa41dsqSjVz';
 const assetId = 0;
 
 function Exchange (): React.ReactElement<Props> {
@@ -59,7 +61,7 @@ function Exchange (): React.ReactElement<Props> {
     }, []);
 
     async function initApi () {
-        const provider = new WsProvider('ws://127.0.0.1:9944');
+        const provider = new WsProvider('ws://47.101.139.226:9944/');
         const api = await ApiPromise.create({ provider });
 
         setBifrostApi(api);
@@ -101,30 +103,59 @@ function Exchange (): React.ReactElement<Props> {
 
     function formatAmount(amount)
     {
-        return amount * 10000000000000
+        return amount * 1000000000000
     }
 
     function formatBifrostAmount(amount)
     {
-        return Number(amount / 10000000000000).toFixed(4)
+        return Number(amount / 1000000000000).toFixed(4)
     }
 
     async function issueAsset(account, amount)
     {
-        const [issue] = await Promise.all([
-            bifrostApi.tx.assets.issue([assetId, account, formatAmount(amount)])
-        ]);
+        const keyring = new Keyring({ type: 'sr25519' });
+        const alice = keyring.addFromUri('//Alice');
 
-        console.log('Bifrost Issue Assets', issue)
+        const veosAmount = formatAmount(amount);
+
+        const [issue] = await Promise.all([
+            bifrostApi.tx.assets.transfer(assetId, account, veosAmount).signAndSend(alice, ({ events = [], status }) => {
+                if (status.isFinalized) {
+                    alert('Bifrost Issue Success txid:' + status.asFinalized.toHex());
+                    getBifrostBalance(account);
+                    console.log('Successful issue of ' + veosAmount + ' vEOS with hash ' + status.asFinalized.toHex())
+                } else {
+                    console.log('Status of issue: ' + status.type)
+                }
+
+                events.forEach(({ phase, event: { data, method, section } }) => {
+                    console.log(phase.toString() + ' : ' + section + '.' + method + ' ' + data.toString())
+                })
+            })
+        ]);
     }
 
-    async function destroyAsset(amount)
+    async function destroyAsset(account, amount)
     {
-        const [destroy] = await Promise.all([
-            bifrostApi.tx.assets.destroy([assetId, formatAmount(amount)])
-        ]);
+        const injector = await web3FromAddress(account);
 
-        console.log('Bifrost Destroy Assets', issue)
+        bifrostApi.setSigner(injector.signer)
+        const [destroy] = await Promise.all([
+            bifrostApi.tx.assets.destroy(assetId, formatAmount(amount)).signAndSend(account, ({ events = [], status }) => {
+                if (status.isFinalized) {
+                    alert('Bifrost Destroy Success txid:' + status.asFinalized.toHex());
+                    getBifrostBalance(account);
+                    redeemEos();
+                    console.log('Successful destroy of ' + veosAmount + ' vEOS with hash ' + status.asFinalized.toHex())
+                } else {
+                    console.log('Status of destroy: ' + status.type)
+                }
+
+                events.forEach(({ phase, event: { data, method, section } }) => {
+                    console.log(phase.toString() + ' : ' + section + '.' + method + ' ' + data.toString())
+                })
+            })
+        ]);
     }
 
     function getEosBalance(account)
@@ -172,9 +203,12 @@ function Exchange (): React.ReactElement<Props> {
 
     function toEos()
     {
-        (async () => {
-            destroyAsset(exchangevEos)
+        destroyAsset(bifrostAccount, exchangevEos)
+    }
 
+    function redeemEos()
+    {
+        (async () => {
             const result = await eosApi.transact({
                 actions: [{
                     account: 'eosio.token',
@@ -196,41 +230,41 @@ function Exchange (): React.ReactElement<Props> {
             });
 
             console.log(result.processed)
-            alert("Success txid: " + result.transaction_id)
+
+            alert("Transfer Success txid: " + result.transaction_id)
+            getEosBalance(eosAccount);
         })();
     }
 
     function tovEos()
     {
-        // issueAsset(bifrostAccount, exchangeEos);
-        getRatio();
+        (async () => {
+            const result = await eosApi.transact({
+                actions: [{
+                    account: 'eosio.token',
+                    name: 'transfer',
+                    authorization: [{
+                        actor: eosAccount,
+                        permission: 'active',
+                    }],
+                    data: {
+                        from: eosAccount,
+                        to: spvEos,
+                        quantity: Number(exchangeEos).toFixed(4) + ' EOS',
+                        memo: 'bifrost:' + bifrostAccount
+                    },
+                }]
+            }, {
+                blocksBehind: 3,
+                expireSeconds: 30
+            });
 
-        // (async () => {
-        //     const result = await eosApi.transact({
-        //         actions: [{
-        //             account: 'eosio.token',
-        //             name: 'transfer',
-        //             authorization: [{
-        //                 actor: eosAccount,
-        //                 permission: 'active',
-        //             }],
-        //             data: {
-        //                 from: eosAccount,
-        //                 to: spvEos,
-        //                 quantity: Number(exchangeEos).toFixed(4) + ' EOS',
-        //                 memo: 'bifrost:' + bifrostAccount
-        //             },
-        //         }]
-        //     }, {
-        //         blocksBehind: 3,
-        //         expireSeconds: 30
-        //     });
-
-        //     issueAsset(bifrostAccount, exchangeEos)
-
-        //     console.log(result.processed)
-        //     alert("Success txid: " + result.transaction_id)
-        // })();
+            console.log(result.processed)
+            
+            issueAsset(bifrostAccount, exchangeEos)
+            alert("Transfer Success txid: " + result.transaction_id)
+            getEosBalance(eosAccount);
+        })();
     }
 
     const eosOptions = [

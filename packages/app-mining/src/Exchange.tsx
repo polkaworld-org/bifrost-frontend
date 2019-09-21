@@ -51,14 +51,20 @@ function Exchange (): React.ReactElement<Props> {
 
 
     useEffect((): void => {
-        initApi();
+        if(!bifrostApi) {
+            initApi();
+        }
 
         getEosBalance(eosAccount);
-        getBifrostBalance(bifrostAccount);
-        getRatio();
 
-        // startTimer();
-    }, []);
+        if(bifrostApi) {
+            loopRatio();
+
+            getBifrostBalance(bifrostAccount);
+        }
+
+        // loopRatio();
+    }, [bifrostApi]);
 
     async function initApi () {
         const provider = new WsProvider('ws://47.101.139.226:9944/');
@@ -67,20 +73,11 @@ function Exchange (): React.ReactElement<Props> {
         setBifrostApi(api);
     }
 
-    function startTimer()
+    function loopRatio()
     {
         if(!timer) {
             const t = setInterval(() => {
-                console.log('per', (perBlockRatio / 3))
-                console.log('ratio', ratio)
-
-                let newRatio = Number(ratio) - (Number(perBlockRatio) / 3)
-                console.log('new ratio', newRatio)
-
-                let currentBalance = timerEosBalance / newRatio;
-
-                setRatio(newRatio)
-                setTimerEosBalance(currentBalance)
+                getRatio()
             }, 1000);  
 
             setTimer(t);
@@ -94,11 +91,11 @@ function Exchange (): React.ReactElement<Props> {
             bifrostApi.query.exchange.ratePerBlock()
         ]);
 
-        setRatio(Number(rpcRatio))
-        setPerBlockRatio(Number(rpcPerBlockRatio))
+        setRatio(formatRatio(rpcRatio))
+        setPerBlockRatio(formatRatio(rpcPerBlockRatio))
 
-        console.log('Bifrost Ratio', Number(rpcRatio))
-        console.log('Bifrost Ratio', Number(rpcPerBlockRatio))
+        console.log('Bifrost Ratio', formatRatio(rpcRatio))
+        console.log('Bifrost Ratio Decrease Per Block', formatRatio(rpcPerBlockRatio))
     }
 
     function formatAmount(amount)
@@ -109,6 +106,11 @@ function Exchange (): React.ReactElement<Props> {
     function formatBifrostAmount(amount)
     {
         return Number(amount / 1000000000000).toFixed(4)
+    }
+
+    function formatRatio(ratio)
+    {
+        return Number(ratio / 1000000000000)
     }
 
     async function issueAsset(account, amount)
@@ -220,7 +222,7 @@ function Exchange (): React.ReactElement<Props> {
                     data: {
                         from: spvEos,
                         to: eosAccount,
-                        quantity: Number(exchangevEos).toFixed(4) + ' EOS',
+                        quantity: Number(exchangevEos / ratio).toFixed(4) + ' EOS',
                         memo: 'bifrost:' + bifrostAccount
                     },
                 }]
@@ -261,7 +263,7 @@ function Exchange (): React.ReactElement<Props> {
 
             console.log(result.processed)
             
-            issueAsset(bifrostAccount, exchangeEos)
+            issueAsset(bifrostAccount, exchangeEos * ratio)
             alert("Transfer Success txid: " + result.transaction_id)
             getEosBalance(eosAccount);
         })();
@@ -324,8 +326,8 @@ function Exchange (): React.ReactElement<Props> {
             </div>
             <div style={{ paddingTop: '50px', textAlign: 'center' }}>
                 <div>
-                    <div>当前 vEOS : EOS 比例为 0.02</div>
-                    <div>可兑换 EOS 数量: <FlipRatio currentBalance={timerEosBalance} /><span style={{ fontSize: '26px' }}>EOS</span></div>
+                    <div>vEOS Convert Ratio { ratio > 0 ? Number(1 / ratio).toFixed(8) : 'Loading...' }</div>
+                    <div>{ veosBalance } vEOS Can Convert <FlipRatio height={40} width={24} nonFontSize={'40px'} currentBalance={ratio > 0 ? Number(timerEosBalance / ratio).toFixed(4) : '0.0000'} /><span style={{ fontSize: '26px' }}>EOS</span></div>
                 </div>
                 <div>
                     <Toggle onChange={changeSwitch} defaultValue={isExchange} />

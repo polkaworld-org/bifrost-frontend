@@ -31,60 +31,110 @@ const eosApi = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(),
 import { ApiPromise, WsProvider } from '@polkadot/api';
 const aliceBifrost = 'JEaJtPxm3BH8X1ZNc64DiUWPJBuT4vMC9Qrds8Q877CRRa1';
 const bobBifrost = 'JHKD9g23RWkq9MHtLMUXndXL8RrLxt5pNHWUvpPrgixAwuj';
-const customProvider = new WsProvider('ws://127.0.0.1:9944');
+const assetId = 0;
 
 function Exchange (): React.ReactElement<Props> {
     const [eosAccount, setEosAccount] = useState(aliceEos);
-    const [eosBalance, setEosBalance] = useState(0);
+    const [eosBalance, setEosBalance] = useState(Number(0).toFixed(4));
+    const [veosBalance, setvEosBalance] = useState(Number(0).toFixed(4));
     const [bifrostAccount, setBifrostAccount] = useState(aliceBifrost);
-    const [bifrostBalance, setBifrostBalance] = useState(0);
     const [bifrostApi, setBifrostApi] = useState(false);
     const [isExchange, setIsExchange] = useState(true);
     const [exchangeEos, setExchangeEos] = useState(0);
     const [exchangevEos, setExchangevEos] = useState(0);
+    const [ratio, setRatio] = useState('0.2');
+    const [timerEosBalance, setTimerEosBalance] = useState('50');
+    const [perBlockRatio, setPerBlockRatio] = useState('0.00001');
+    const [timer, setTimer] = useState(false);
+
 
     useEffect((): void => {
+        initApi();
+
         getEosBalance(eosAccount);
         getBifrostBalance(bifrostAccount);
-    });
+        getRatio();
 
-    function initApi()
-    {
-        (async () => {
-            const api = await ApiPromise.create({
-                provider: customProvider,
-                types: {
-                    Token: {
-                        "symbol": "Vec<u8>",
-                        "precision": "u16",
-                        "totalSupply": "u128"
-                    },
-                    SettlementId: "u64"
-                }
-            });
+        // startTimer();
+    }, []);
 
-            return api
-        })();
+    async function initApi () {
+        const provider = new WsProvider('ws://127.0.0.1:9944');
+        const api = await ApiPromise.create({ provider });
+
+        setBifrostApi(api);
     }
 
-    // function getRatio()
-    // {
-    //     (async () => {
-    //         const bifrostApi = await ApiPromise.create({ provider });
-    //         const balance = await bifrostApi.query.balances.freeBalance(account)
-
-    //         console.log('Bifrost Account', balance);
-    //     })();
-    // }
-
-    function issueAsset()
+    function startTimer()
     {
 
+            // if(!ratio) {
+            //     setRatio('0.2')
+            //     setPerBlockRatio('0.0001')
+
+            //     let veos = 50;
+
+            //     setTimerEosBalance(veos/0.2);
+            // }
+
+        if(!timer) {
+            const t = setInterval(() => {
+                console.log('per', (perBlockRatio / 3))
+                console.log('ratio', ratio)
+
+                let newRatio = Number(ratio) - (Number(perBlockRatio) / 3)
+                console.log('new ratio', newRatio)
+
+                let currentBalance = timerEosBalance / newRatio;
+
+                setRatio(newRatio)
+                setTimerEosBalance(currentBalance)
+            }, 1000);  
+
+            setTimer(t);
+        }
     }
 
-    function destroyAsset()
+    async function getRatio()
     {
+        const [rpcRatio, rpcPerBlockRatio] = await Promise.all([
+            bifrostApi.query.exchange.exchangeRate(),
+            bifrostApi.query.exchange.ratePerBlock()
+        ]);
 
+        setRatio(Number(rpcRatio))
+        setPerBlockRatio(Number(rpcPerBlockRatio))
+
+        console.log('Bifrost Ratio', Number(rpcRatio))
+        console.log('Bifrost Ratio', Number(rpcPerBlockRatio))
+    }
+
+    function formatAmount(amount)
+    {
+        return amount * 10000000000000
+    }
+
+    function formatBifrostAmount(amount)
+    {
+        return Number(amount / 10000000000000).toFixed(4)
+    }
+
+    async function issueAsset(account, amount)
+    {
+        const [issue] = await Promise.all([
+            bifrostApi.tx.assets.issue([assetId, account, formatAmount(amount)])
+        ]);
+
+        console.log('Bifrost Issue Assets', issue)
+    }
+
+    async function destroyAsset(amount)
+    {
+        const [destroy] = await Promise.all([
+            bifrostApi.tx.assets.destroy([assetId, formatAmount(amount)])
+        ]);
+
+        console.log('Bifrost Destroy Assets', issue)
     }
 
     function getEosBalance(account)
@@ -97,17 +147,15 @@ function Exchange (): React.ReactElement<Props> {
         })();
     }
 
-    function getBifrostBalance(account)
+    async function getBifrostBalance(account)
     {
-        initApi();
-        console.log('api', bifrostApi)
-        if(bifrostApi) {
-            (async () => {
-                const balance = await bifrostApi.query.assets.balances([0, '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty']);
+        const [balance] = await Promise.all([
+            bifrostApi.query.assets.balances([assetId, account])
+        ]);
 
-                console.log('Bifrost Account', sss);
-            })();
-        }
+        setvEosBalance(formatBifrostAmount(balance))
+
+        console.log('Bifrost Account', formatBifrostAmount(balance))
     }
 
     function changeEosAccount(select)
@@ -133,25 +181,22 @@ function Exchange (): React.ReactElement<Props> {
 
     function toEos()
     {
-        
-    }
-
-    function tovEos()
-    {
         (async () => {
+            destroyAsset(exchangevEos)
+
             const result = await eosApi.transact({
                 actions: [{
                     account: 'eosio.token',
                     name: 'transfer',
                     authorization: [{
-                        actor: eosAccount,
+                        actor: spvEos,
                         permission: 'active',
                     }],
                     data: {
-                        from: eosAccount,
-                        to: spvEos,
-                        quantity: Number(exchangeEos).toFixed(4) + ' EOS',
-                        memo: 'bifrost:' + 'J7Pby13SAvbkEx7FYMwLpPWeeNRr8Z9dEKm3DCgRgbznSWU',
+                        from: spvEos,
+                        to: eosAccount,
+                        quantity: Number(exchangevEos).toFixed(4) + ' EOS',
+                        memo: 'bifrost:' + bifrostAccount
                     },
                 }]
             }, {
@@ -162,6 +207,39 @@ function Exchange (): React.ReactElement<Props> {
             console.log(result.processed)
             alert("Success txid: " + result.transaction_id)
         })();
+    }
+
+    function tovEos()
+    {
+        // issueAsset(bifrostAccount, exchangeEos);
+        getRatio();
+
+        // (async () => {
+        //     const result = await eosApi.transact({
+        //         actions: [{
+        //             account: 'eosio.token',
+        //             name: 'transfer',
+        //             authorization: [{
+        //                 actor: eosAccount,
+        //                 permission: 'active',
+        //             }],
+        //             data: {
+        //                 from: eosAccount,
+        //                 to: spvEos,
+        //                 quantity: Number(exchangeEos).toFixed(4) + ' EOS',
+        //                 memo: 'bifrost:' + bifrostAccount
+        //             },
+        //         }]
+        //     }, {
+        //         blocksBehind: 3,
+        //         expireSeconds: 30
+        //     });
+
+        //     issueAsset(bifrostAccount, exchangeEos)
+
+        //     console.log(result.processed)
+        //     alert("Success txid: " + result.transaction_id)
+        // })();
     }
 
     const eosOptions = [
@@ -215,14 +293,14 @@ function Exchange (): React.ReactElement<Props> {
                     <Select options={bifrostOptions} defaultValue={{ value: aliceBifrost, label: aliceBifrost }} onChange={changeBifrostAccount} />
                     <div>
                         <span>Bifrost 账号：{bifrostAccount}</span>
-                        <span>余额：{bifrostBalance}</span>
+                        <span>余额：{veosBalance} vEOS</span>
                     </div>
                 </div>
             </div>
             <div style={{ paddingTop: '50px', textAlign: 'center' }}>
                 <div>
-                    <span>当前 vEOS : EOS 比例为 0.02</span>
-                    <span>可兑换 EOS 数量: <FlipRatio ratio={'0.2'} veosBalance={'10'} /></span>
+                    <div>当前 vEOS : EOS 比例为 0.02</div>
+                    <div>可兑换 EOS 数量: <FlipRatio currentBalance={timerEosBalance} /><span style={{ fontSize: '26px' }}>EOS</span></div>
                 </div>
                 <div>
                     <Toggle onChange={changeSwitch} defaultValue={isExchange} />
@@ -270,7 +348,7 @@ function Exchange (): React.ReactElement<Props> {
                                   flex: 3,
                                   padding: '5px'
                               }}>
-                                  {/*<Input min={0} max={veosBalance} defaultValue={exchangeEos} onChange={inputExchangeEos} label={'EOS'} />*/}
+                                  {<Input min={0} max={veosBalance} defaultValue={exchangevEos} onChange={setExchangevEos} label={'vEOS'} />}
                               </div>
                             </>
                         )

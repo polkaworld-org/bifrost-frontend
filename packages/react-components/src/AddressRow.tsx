@@ -114,17 +114,33 @@ class AddressRow extends Row<Props, State> {
   }
 
   protected renderAddressAndName (): React.ReactNode {
-    const { withAddressOrName = false } = this.props;
+    const { withAddressOrName = false, eosBalance } = this.props;
 
     if (withAddressOrName) {
       return this.renderName(true);
     } else {
-      return (
-        <>
-          {this.renderName()}
-          {this.renderAddress()}
-        </>
-      );
+      if (this.state.name === "alice_stash") {
+        return (
+          <>
+            {this.renderName()}
+            {"EOS STAKING: " + Number(eosBalance)*0.8 + " EOS/80%"}
+          </>
+        );
+      } else if (this.state.name === "bob_stash") {
+        return (
+          <>
+            {this.renderName()}
+            {"EOS STAKING: " + Number(eosBalance)*0.2 + " EOS/20%"}
+          </>
+        );
+      } else {
+        return (
+          <>
+            {this.renderName()}
+            {this.renderAddress()}
+          </>
+        );
+      }
     }
   }
 

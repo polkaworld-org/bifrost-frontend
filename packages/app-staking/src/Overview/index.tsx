@@ -6,7 +6,7 @@
 import { BareProps } from '@polkadot/react-components/types';
 import { ComponentProps } from '../types';
 
-import React, { useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { HeaderExtended } from '@polkadot/api-derive';
 import { ApiContext } from '@polkadot/react-api';
 import { withCalls, withMulti } from '@polkadot/react-api/with';
@@ -19,8 +19,31 @@ interface Props extends BareProps, ComponentProps {
   chain_subscribeNewHeads?: HeaderExtended;
 }
 
+import { Api, JsonRpc, RpcError } from 'eosjs';
+import { JsSignatureProvider } from 'eosjs/dist/eosjs-jssig';
+
+const spvEos = 'bifrostdemo1';
+const demoPrivateKey = '5JcoS7ich5oDPeLd6XgeeoayhfX9PU98FGv6ChdUb1fkAHkv7EL';
+const signatureProvider = new JsSignatureProvider([demoPrivateKey]);
+const rpc = new JsonRpc('http://jungle2.cryptolions.io:80', { fetch });
+const eosApi = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
+
 // TODO: Switch to useState
 function Overview (props: Props): React.ReactElement<Props> {
+  const [eosBalance, setEosBalance] = useState(Number(0).toFixed(4));
+
+  useEffect((): void => {
+    getEosBalance(spvEos);
+  }, []);
+
+  function getEosBalance(account)
+  {
+    (async () => {
+      const balance = await eosApi.rpc.get_currency_balance('eosio.token', account, 'EOS');
+      setEosBalance(balance[0].split(' ')[0]);
+    })();
+  }
+
   const { isSubstrateV2 } = useContext(ApiContext);
   const { chain_subscribeNewHeads, allControllers, allStashes, currentValidatorsControllersV1OrStashesV2, recentlyOnline } = props;
   let nextSorted: string[];
@@ -60,6 +83,7 @@ function Overview (props: Props): React.ReactElement<Props> {
         lastAuthor={lastAuthor}
         next={nextSorted}
         recentlyOnline={recentlyOnline}
+        eosBalance={eosBalance}
       />
     </div>
   );

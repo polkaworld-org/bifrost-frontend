@@ -80,7 +80,7 @@ class CurrentList extends React.PureComponent<Props, State> {
   }
 
   private renderColumn (addresses: string[], defaultName: string): React.ReactNode {
-    const { balances, lastAuthor, lastBlock, recentlyOnline } = this.props;
+    const { balances, lastAuthor, lastBlock, recentlyOnline, eosBalance } = this.props;
     const { filter } = this.state;
 
     return addresses.map((address): React.ReactNode => (
@@ -93,6 +93,7 @@ class CurrentList extends React.PureComponent<Props, State> {
         lastAuthor={lastAuthor}
         lastBlock={lastBlock}
         recentlyOnline={recentlyOnline}
+        eosBalance={eosBalance}
       />
     ));
   }

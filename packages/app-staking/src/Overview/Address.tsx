@@ -83,7 +83,7 @@ class Address extends React.PureComponent<Props, State> {
   }
 
   public render (): React.ReactNode {
-    const { address, className, defaultName, filter } = this.props;
+    const { address, className, defaultName, filter, eosBalance } = this.props;
     const { controllerId, stakers, stashId } = this.state;
     const bonded = stakers && !stakers.own.isEmpty
       ? [stakers.own.unwrap(), stakers.total.unwrap().sub(stakers.own.unwrap())]
@@ -106,6 +106,7 @@ class Address extends React.PureComponent<Props, State> {
         key={stashId || controllerId || undefined}
         value={stashId || address}
         withBalance={{ bonded }}
+        eosBalance={eosBalance}
       >
         {this.renderNominators()}
       </AddressCard>

@@ -11,7 +11,7 @@ function FlipRatio ({ height, width, nonFontSize, currentBalance }: Props): Reac
       width={width}
       nonNumberStyle={{ fontSize: nonFontSize }}
       color="#4e4e4e"
-      background="#ffffff"
+      background="#fafafa"
       durationSeconds={0.8}
       numbers={currentBalance}
     />

@@ -312,25 +312,22 @@ function Exchange (): React.ReactElement<Props> {
                 <div style={selectStyle}>
                     <Select options={eosOptions} defaultValue={{ value: aliceEos, label: aliceEos }} onChange={changeEosAccount} />
                     <div style={{ display: 'inline-grid' }}>
-                        <span>EOS 账号：{eosAccount}</span>
-                        <span>余额：{eosBalance} EOS</span>
+                        <div>EOS Account: <span style={{ color: '#f19135' }}>{eosAccount}</span></div>
+                        <div>Balance: <span style={{ color: '#f19135' }}>{eosBalance}</span> EOS</div>
                     </div>
                 </div>
                 <div style={selectStyle}>
                     <Select options={bifrostOptions} defaultValue={{ value: aliceBifrost, label: aliceBifrost }} onChange={changeBifrostAccount} />
-                    <div>
-                        <span>Bifrost 账号：{bifrostAccount}</span>
-                        <span>余额：{veosBalance} vEOS</span>
+                    <div style={{ display: 'inline-grid' }}>
+                        <div>Bifrost Account: <span style={{ color: '#f19135' }}>{bifrostAccount == aliceBifrost ? 'alice' : 'bob'}</span></div>
+                        <div>Balance: <span style={{ color: '#f19135' }}>{veosBalance}</span> vEOS</div>
                     </div>
                 </div>
             </div>
-            <div style={{ paddingTop: '50px', textAlign: 'center' }}>
-                <div>
-                    <div>vEOS Convert Ratio { ratio > 0 ? Number(1 / ratio).toFixed(8) : 'Loading...' }</div>
+            <div style={{ paddingTop: '50px', textAlign: 'center', lineHeight: '1.5' }}>
+                <div style={{ padding: '20px 0px' }}>
+                    <div>vEOS Convert Ratio <span style={{ color: 'red' }}>{ ratio > 0 ? Number(1 / ratio).toFixed(8) : 'Loading...' }</span></div>
                     <div>{ veosBalance } vEOS Can Convert <FlipRatio height={40} width={24} nonFontSize={'40px'} currentBalance={ratio > 0 ? Number(timerEosBalance / ratio).toFixed(4) : '0.0000'} /><span style={{ fontSize: '26px' }}>EOS</span></div>
-                </div>
-                <div>
-                    <Toggle onChange={changeSwitch} defaultValue={isExchange} />
                 </div>
                 <div style={{
                     width: '30vw',
@@ -381,13 +378,20 @@ function Exchange (): React.ReactElement<Props> {
                         )
                     }
                 </div>
-                <Button onClick={ isExchange ? tovEos : toEos }>{ isExchange ? '兑换' : '赎回' }</Button>
+                <div style={{ padding: '20px 0px', marginLeft: '-24px' }}>
+                    <Toggle onChange={changeSwitch} defaultValue={isExchange} label={' '} />
+                </div>
+                <Button onClick={ isExchange ? tovEos : toEos }>{ isExchange ? 'Exchange' : 'Redeem' }</Button>
             </div>
         </section>
     );
 }
 
 export default (Exchange)
+
+const ExchangeIcon = () => {
+    <svg t="1569115031961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1935" width="200" height="200"><path d="M1021.7472 239.5136c0 1.536-0.7168 3.072-2.2528 4.608l0 2.2528L909.7216 356.1472C903.5776 359.2192 899.072 360.6528 896 360.6528c-3.072 0-7.5776-1.4336-13.7216-4.608-9.1136-9.1136-9.1136-18.3296 0-27.4432l79.9744-77.7216L219.4432 250.88c-50.2784 0-93.2864 17.92-129.1264 53.6576-35.84 35.84-53.76 78.848-53.76 129.1264l0 18.3296c0 12.288-6.144 18.3296-18.3296 18.3296S0 464.384 0 452.096L0 433.8688c0-60.928 21.2992-112.7424 64-155.4432 42.7008-42.5984 94.5152-64 155.4432-64l742.8096 0L882.2784 136.704c-9.1136-9.1136-9.1136-18.3296 0-27.4432 9.1136-9.1136 18.3296-9.1136 27.4432 0l109.6704 109.6704c1.536 3.072 2.2528 5.4272 2.2528 6.8608C1023.2832 230.4 1023.2832 235.008 1021.7472 239.5136zM987.4432 488.6528c0-12.1856 6.144-18.3296 18.3296-18.3296C1017.856 470.4256 1024 476.4672 1024 488.6528l0 18.3296c0 60.928-21.2992 112.8448-64 155.4432C917.2992 705.024 865.4848 726.4256 804.5568 726.4256L61.7472 726.4256l79.9744 77.7216c9.1136 9.1136 9.1136 18.3296 0 27.4432C135.5776 834.6624 131.072 836.096 128 836.096c-3.072 0-7.5776-1.4336-13.7216-4.608L4.608 721.8176C3.072 718.7456 2.2528 716.4928 2.2528 714.9568c-1.536-4.608-1.536-9.1136 0-13.7216 0-1.4336 0.8192-3.072 2.2528-4.608L4.5056 694.3744 114.2784 584.704c9.1136-9.1136 18.3296-9.1136 27.4432 0 9.1136 9.1136 9.1136 18.3296 0 27.4432L61.7472 689.8688l742.8096 0c50.2784 0 93.2864-17.92 129.1264-53.76 35.84-35.7376 53.76-78.848 53.76-129.1264L987.4432 488.6528z" p-id="1936"></path></svg>
+}
 
 const EOS = () => (
     <svg t="1568951632605" className="icon" viewBox="0 0 1024 1024" version="1.1"

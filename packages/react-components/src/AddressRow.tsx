@@ -131,7 +131,7 @@ class AddressRow extends Row<Props, State> {
         return (
           <>
             {this.renderName()}
-            {"EOS STAKING: " + new BigNumber(eosBalance).multipliedBy(0.2).toFixed(4) + " EOS/80%"}
+            {"EOS STAKING: " + new BigNumber(eosBalance).multipliedBy(0.2).toFixed(4) + " EOS/20%"}
           </>
         );
       } else {

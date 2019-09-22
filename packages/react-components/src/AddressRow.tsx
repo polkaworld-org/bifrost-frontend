@@ -5,6 +5,7 @@
 
 import { AccountId, AccountIndex, Address } from '@polkadot/types/interfaces';
 import { I18nProps } from '@polkadot/react-components/types';
+import BigNumber from 'bignumber.js'
 
 import BN from 'bn.js';
 import React from 'react';
@@ -123,14 +124,14 @@ class AddressRow extends Row<Props, State> {
         return (
           <>
             {this.renderName()}
-            {"EOS STAKING: " + Number(eosBalance)*0.8 + " EOS/80%"}
+            {"EOS STAKING: " + new BigNumber(eosBalance).multipliedBy(0.8).toFixed(4) + " EOS/80%"}
           </>
         );
       } else if (this.state.name === "bob_stash") {
         return (
           <>
             {this.renderName()}
-            {"EOS STAKING: " + Number(eosBalance)*0.2 + " EOS/20%"}
+            {"EOS STAKING: " + new BigNumber(eosBalance).multipliedBy(0.2).toFixed(4) + " EOS/20%"}
           </>
         );
       } else {
